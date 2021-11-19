@@ -93,4 +93,4 @@ cleanup: pycache-remove dsstore-remove mypycache-remove ipynbcheckpoints-remove 
 
 .PHONY: run
 run: 
-	poetry run python -m {{ cookiecutter.project_name.lower().replace(' ', '-') }}
+	poetry run python -m {{ cookiecutter.project_name.lower().replace(' ', '_').replace('-', '_') }}
