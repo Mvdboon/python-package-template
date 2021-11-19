@@ -17,7 +17,7 @@ _toml = tomlkit.loads((_root / "pyproject.toml").read_text(encoding="utf8"))
 T = TypeVar("T")
 
 
-def find(key: str, default: Optional[T] = None, as_type: Type[T] = str) -> Optional[T]:
+def find(key: str, default: Optional[T] = None, as_type: Type[T] = str) -> Optional[T]: # type: ignore
     """
     Gets a value from pyproject.toml, or a default.
 
@@ -34,13 +34,13 @@ def find(key: str, default: Optional[T] = None, as_type: Type[T] = str) -> Optio
         at = at.get(k)
         if at is None:
             return default
-    return as_type(at)
+    return as_type(at) # type: ignore
 
 
 # Basic information, used by Sphinx
 # Leave language as None unless you have multiple translations
 language = None
-project = find("tool.poetry.name").replace("=", "_")
+project = find("tool.poetry.name").replace("=", "_") # type: ignore
 version = find("tool.poetry.version")
 release = version
 author = find("tool.poetry.authors")
