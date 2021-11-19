@@ -3,10 +3,6 @@ SHELL := /usr/bin/env bash
 PYTHON := python
 PYTHONPATH := `pwd`
 
-#* Docker variables
-IMAGE := {{ cookiecutter.project_name.lower().replace(' ', '_').replace('-', '_') }}
-VERSION := latest
-
 #* Poetry
 .PHONY: poetry-download
 poetry-download:
@@ -21,7 +17,7 @@ poetry-remove:
 install:
 	poetry lock -n && poetry export --without-hashes > requirements.txt
 	poetry install -n
-	-poetry run mypy --install-types --non-interactive ./
+	-poetry run mypy --install-types --non-interactive hooks tests
 
 .PHONY: pre-commit-install
 pre-commit-install:
@@ -30,9 +26,9 @@ pre-commit-install:
 #* Formatters
 .PHONY: codestyle
 codestyle:
-	poetry run pyupgrade --exit-zero-even-if-changed --py{{ cookiecutter.minimal_python_version.replace('.', '') }}-plus **/*.py
-	poetry run isort --settings-path pyproject.toml ./
-	poetry run black --config pyproject.toml ./
+	poetry run pyupgrade --exit-zero-even-if-changed --py37-plus
+	poetry run isort --settings-path pyproject.toml hooks tests
+	poetry run black --config pyproject.toml hooks tests
 
 .PHONY: formatting
 formatting: codestyle
@@ -40,24 +36,24 @@ formatting: codestyle
 #* Linting
 .PHONY: test
 test:
-	PYTHONPATH=$(PYTHONPATH) poetry run pytest -c pyproject.toml --cov-report=html --cov={{ cookiecutter.project_name.lower().replace(' ', '_').replace('-', '_') }} tests/
+	poetry run pytest -c pyproject.toml --cov-report=html --cov=hooks tests/
 	poetry run coverage-badge -o assets/images/coverage.svg -f
 
 .PHONY: check-codestyle
 check-codestyle:
-	poetry run isort --diff --check-only --settings-path pyproject.toml ./
-	poetry run black --diff --check --config pyproject.toml ./
-	poetry run darglint --verbosity 2 {{ cookiecutter.project_name.lower().replace(' ', '_').replace('-', '_') }} tests
+	poetry run isort --diff --check-only --settings-path pyproject.toml hooks tests
+	poetry run black --diff --check --config pyproject.toml hooks tests
+	poetry run darglint --verbosity 2 hooks tests
 
 .PHONY: mypy
 mypy:
-	poetry run mypy --config-file pyproject.toml ./
+	poetry run mypy --config-file pyproject.toml hooks tests
 
 .PHONY: check-safety
 check-safety:
 	poetry check
 	poetry run safety check --full-report
-	poetry run bandit -ll --recursive {{ cookiecutter.project_name.lower().replace(' ', '_').replace('-', '_') }} tests
+	poetry run bandit -ll --recursive hooks
 
 .PHONY: lint
 lint: test check-codestyle mypy check-safety
@@ -66,23 +62,6 @@ lint: test check-codestyle mypy check-safety
 update-dev-deps:
 	poetry add -D bandit@latest darglint@latest "isort[colors]@latest" mypy@latest pre-commit@latest pydocstyle@latest pylint@latest pytest@latest pyupgrade@latest safety@latest coverage@latest coverage-badge@latest pytest-html@latest pytest-cov@latest
 	poetry add -D --allow-prereleases black@latest
-
-#* Docker
-# Example: make docker-build VERSION=latest
-# Example: make docker-build IMAGE=some_name VERSION={{ cookiecutter.version }}
-.PHONY: docker-build
-docker-build:
-	@echo Building docker $(IMAGE):$(VERSION) ...
-	docker build \
-		-t $(IMAGE):$(VERSION) . \
-		-f ./docker/Dockerfile --no-cache
-
-# Example: make docker-remove VERSION=latest
-# Example: make docker-remove IMAGE=some_name VERSION={{ cookiecutter.version }}
-.PHONY: docker-remove
-docker-remove:
-	@echo Removing docker $(IMAGE):$(VERSION) ...
-	docker rmi -f $(IMAGE):$(VERSION)
 
 #* Cleaning
 .PHONY: pycache-remove
@@ -111,3 +90,7 @@ build-remove:
 
 .PHONY: cleanup
 cleanup: pycache-remove dsstore-remove mypycache-remove ipynbcheckpoints-remove pytestcache-remove
+
+.PHONY: run
+run: 
+	poetry run python -m {{ cookiecutter.project_name.lower().replace(' ', '-') }
